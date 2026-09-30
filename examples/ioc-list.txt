@@ -1,0 +1,26 @@
+# One indicator per line. Lines starting with # are ignored.
+#
+#   bare filename      --> the exact file name
+#   contains a slash   --> anywhere in the full path
+#   /regex/            --> a regular expression searched in the file name
+#
+# Matching ignores case.
+#
+# Load it in the IOC rules box of the open dialog.
+
+svchost32.exe
+123.exe
+a.exe
+ab.exe
+abc.exe
+LB3.exe
+1.exe
+update_x64.dll
+\Users\Public\Downloads\stage
+\ProgramData\Intel\rclone.exe
+
+# 16 hex characters followed by .dll --> a common generated-payload pattern
+/^[a-f0-9]{16}\.dll$/
+
+# Anything that looks like a per-host collection archive
+/^backup-.+-\d{8}\.(zip|7z)$/

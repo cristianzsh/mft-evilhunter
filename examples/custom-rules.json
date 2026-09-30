@@ -1,0 +1,35 @@
+{
+  "version": "1.0",
+  "rules": [
+    {
+      "name": "example_staging_directory",
+      "title": "Payload staged in a directory seen in this intrusion",
+      "description": "Replace the path with whatever the actor used in your case.",
+      "severity": "high",
+      "category": "execution",
+      "mitre": ["T1105"],
+      "path_contains": ["\\programdata\\intel\\", "\\windows\\debug\\wia\\"],
+      "extensions": [".exe", ".dll", ".ps1"]
+    },
+    {
+      "name": "example_backup_exfil_naming",
+      "title": "Archive named after a host, suggesting per-host collection",
+      "description": "Demonstrates a named capture group. The captured value lands in the 'extracted' column and in the GUI details panel.",
+      "severity": "medium",
+      "category": "collection",
+      "mitre": ["T1560.001"],
+      "name_regex": "(?i)^backup-(?P<source_host>[a-z0-9-]+)-\\d{8}\\.(zip|7z|rar)$",
+      "min_size": 1048576
+    },
+    {
+      "name": "example_deleted_scripts_only",
+      "title": "Script deleted after use",
+      "description": "deleted_only narrows a noisy rule to the interesting subset.",
+      "severity": "medium",
+      "category": "defense_evasion",
+      "mitre": ["T1070.004"],
+      "extensions": [".ps1", ".bat", ".cmd", ".vbs"],
+      "deleted_only": true
+    }
+  ]
+}

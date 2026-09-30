@@ -1,0 +1,1715 @@
+{
+  "version": "1.0",
+  "rules": [
+    {
+      "name": "psexec_key_file",
+      "title": "PsExec key file with the source hostname",
+      "description": "PsExec 2.30 and later writes PSEXEC-<hostname>-<hex>.key to \\Windows on the target. The hostname is the machine the operator ran PsExec from. The file is deleted at the end of the session, so it usually survives only in $LogFile or $UsnJrnl.",
+      "severity": "critical",
+      "category": "lateral_movement",
+      "mitre": [
+        "T1021.002",
+        "T1569.002"
+      ],
+      "name_regex": "(?i)^psexec-(?P<source_host>.{1,63})-(?P<key_id>[0-9a-fA-F]{4,16})\\.[a-z0-9]{1,6}$",
+      "noise_filter": false
+    },
+    {
+      "name": "psexec_key_file_loose",
+      "title": "Stray .key file in \\Windows",
+      "description": "PsExec -r renames the service, and the key file follows the new name. Limited to the root of \\Windows, where .key files do not normally appear.",
+      "severity": "high",
+      "category": "lateral_movement",
+      "mitre": [
+        "T1021.002",
+        "T1569.002"
+      ],
+      "extensions": [
+        ".key"
+      ],
+      "name_regex": "(?i)^(?!psexec-.{1,63}-[0-9a-fA-F]{4,16}\\.key$).*\\.key$",
+      "path_regex": "(?i)^\\\\windows\\\\[^\\\\]+$",
+      "noise_filter": false
+    },
+    {
+      "name": "psexesvc_binary",
+      "title": "PSEXESVC service binary",
+      "description": "PsExec copies its service executable to \\Windows on the target and registers it as a service.",
+      "severity": "high",
+      "category": "lateral_movement",
+      "mitre": [
+        "T1569.002",
+        "T1021.002"
+      ],
+      "name_regex": "(?i)^psexesvc.*\\.exe$",
+      "noise_filter": false
+    },
+    {
+      "name": "psexec_clone_binaries",
+      "title": "PsExec clone",
+      "description": "PAExec, RemCom, CSExec and similar tools do the same job as PsExec under another name.",
+      "severity": "high",
+      "category": "lateral_movement",
+      "mitre": [
+        "T1569.002",
+        "T1021.002"
+      ],
+      "name_regex": "(?i)^(paexec(?!-\\d{1,6}-)|remcom|remcomsvc|csexec|csexecsvc|pcexec|xcmd|winexesvc)([-_].*)?\\.exe$",
+      "noise_filter": false
+    },
+    {
+      "name": "psexec_client_binary",
+      "title": "PsExec client present",
+      "description": "psexec.exe or psexec64.exe anywhere on the volume, installed copies included. The client end of lateral movement; on a workstation it marks the host the operator worked from. Administrators keep it too, so the severity is medium.",
+      "severity": "medium",
+      "category": "lateral_movement",
+      "mitre": [
+        "T1569.002",
+        "T1021.002"
+      ],
+      "name_regex": "(?i)^psexec(64)?\\.exe$",
+      "path_not_contains": [
+        "\\windowsapps\\"
+      ],
+      "noise_filter": false
+    },
+    {
+      "name": "paexec_service_binary",
+      "title": "PAExec service binary with the source hostname",
+      "description": "PAExec copies itself to the target as PAExec-<pid>-<hostname>.exe in \\Windows. The hostname is the machine the operator ran it from.",
+      "severity": "critical",
+      "category": "lateral_movement",
+      "mitre": [
+        "T1021.002",
+        "T1569.002"
+      ],
+      "name_regex": "(?i)^paexec-(?P<pid>\\d{1,6})-(?P<source_host>[^\\\\]{1,63})\\.exe$",
+      "noise_filter": false
+    },
+    {
+      "name": "impacket_smbexec_output",
+      "title": "Impacket smbexec output file",
+      "description": "smbexec writes command output to __output_<8 letters> in the root of the share, C$ by default. Older releases used __output.",
+      "severity": "critical",
+      "category": "lateral_movement",
+      "mitre": [
+        "T1021.002",
+        "T1569.002",
+        "T1059.003"
+      ],
+      "noise_filter": false,
+      "name_regex": "(?i)^__output(_[a-z]{8})?$"
+    },
+    {
+      "name": "impacket_smbexec_legacy_batch",
+      "title": "Impacket smbexec batch file, older releases",
+      "description": "Releases before 2023 staged the command as execute.bat in the Temp directory of the target.",
+      "severity": "critical",
+      "category": "lateral_movement",
+      "mitre": [
+        "T1021.002",
+        "T1569.002",
+        "T1059.003"
+      ],
+      "name_equals": [
+        "execute.bat"
+      ],
+      "path_prefix": [
+        "\\windows\\temp\\",
+        "\\temp\\"
+      ],
+      "noise_filter": false,
+      "requires_path": true
+    },
+    {
+      "name": "impacket_smbexec_batch",
+      "title": "Impacket smbexec batch file in \\Windows",
+      "description": "smbexec writes each command to <8 random letters>.bat in \\Windows, runs it through a temporary service and deletes it. The name normally survives only in $LogFile or $UsnJrnl.",
+      "severity": "high",
+      "category": "lateral_movement",
+      "mitre": [
+        "T1021.002",
+        "T1569.002",
+        "T1059.003"
+      ],
+      "name_regex": "^[A-Za-z]{8}\\.bat$",
+      "path_regex": "(?i)^\\\\windows\\\\[^\\\\]+$",
+      "noise_filter": false
+    },
+    {
+      "name": "impacket_wmiexec_output",
+      "title": "Impacket wmiexec or dcomexec output file",
+      "description": "wmiexec writes command output to __<epoch>.<fraction> and dcomexec to __<5 digits>, both in the root of the share, ADMIN$ by default.",
+      "severity": "critical",
+      "category": "lateral_movement",
+      "mitre": [
+        "T1047",
+        "T1021.003"
+      ],
+      "name_regex": "^__(\\d{9,12}\\.\\d{1,8}|\\d{5})$",
+      "path_regex": "(?i)^\\\\(windows\\\\)?[^\\\\]+$",
+      "noise_filter": false
+    },
+    {
+      "name": "impacket_atexec_output",
+      "title": "Impacket atexec output file",
+      "description": "atexec writes command output to <8 random letters>.tmp in \\Windows\\Temp, reads it back and deletes it.",
+      "severity": "medium",
+      "category": "lateral_movement",
+      "mitre": [
+        "T1053.005",
+        "T1021.002"
+      ],
+      "name_regex": "^[A-Za-z]{8}\\.tmp$",
+      "path_regex": "(?i)^\\\\windows\\\\temp\\\\[^\\\\]+$"
+    },
+    {
+      "name": "impacket_atexec_task",
+      "title": "Impacket atexec scheduled task",
+      "description": "atexec registers a task named with the same 8 random letters as its output file, runs it and deletes it. Other tasks with an 8 letter name will match too, so check the name against the output file rule.",
+      "severity": "medium",
+      "category": "lateral_movement",
+      "mitre": [
+        "T1053.005",
+        "T1021.002"
+      ],
+      "name_regex": "^[A-Za-z]{8}$",
+      "path_regex": "(?i)^\\\\windows\\\\system32\\\\tasks\\\\[^\\\\]+$",
+      "noise_filter": false
+    },
+    {
+      "name": "lsass_dump_file",
+      "title": "LSASS memory dump",
+      "description": "A dump file with lsass or nanodump in the name, archived or renamed copies included.",
+      "severity": "critical",
+      "category": "credential_access",
+      "mitre": [
+        "T1003.001"
+      ],
+      "name_regex": "(?i)^.*(lsass|nanodump).*\\.(dmp|dump|bin|zip|rar|7z|gz|txt|log)$",
+      "noise_filter": false
+    },
+    {
+      "name": "process_dump_in_staging_dir",
+      "title": "Process dump in a staging directory",
+      "description": "Dump files in the directories operators write to. Windows Error Reporting and other crash dump locations are excluded, since .dmp files are common there.",
+      "severity": "high",
+      "category": "credential_access",
+      "mitre": [
+        "T1003.001"
+      ],
+      "extensions": [
+        ".dmp",
+        ".dump"
+      ],
+      "path_prefix": [
+        "\\windows\\temp\\",
+        "\\users\\public\\",
+        "\\perflogs\\",
+        "\\$recycle.bin\\",
+        "\\programdata\\"
+      ],
+      "path_not_contains": [
+        "\\watsonbucket\\",
+        "\\crashdumps\\",
+        "\\reportqueue\\",
+        "\\reportarchive\\",
+        "\\dumps\\",
+        "\\crashes\\",
+        "\\crashdump",
+        "\\minidump",
+        "\\logs\\"
+      ],
+      "path_not_regex": "(?i)\\\\(wer[a-z0-9_]*|werfault|dumpstack|livekernelreports)\\\\|\\\\\\$recycle\\.bin\\\\[^\\\\]+\\\\\\$i[^\\\\]*$"
+    },
+    {
+      "name": "credential_tooling",
+      "title": "Credential dumping tool",
+      "description": "Mimikatz, Invoke-Mimikatz, secretsdump, LaZagne, nanodump, Dumpert, SafetyKatz, SharpDump, pypykatz, lsassy, HandleKatz, SharpDPAPI, SharpChrome, kekeo, DonPAPI, the NirSoft password viewers and Veeam-Get-Creds by file name, archives included. A copy inside a Python installation means the toolkit is installed on this machine, which on an ordinary user's workstation is a finding in itself.",
+      "severity": "critical",
+      "category": "credential_access",
+      "mitre": [
+        "T1003",
+        "T1003.001"
+      ],
+      "name_regex": "(?i)^(invoke-)?(mimikatz|mimilib|mimidrv|secretsdump|lazagne|nanodump|dumpert|safetykatz|bettersafetykatz|sharpdump|pypykatz|hashdump|sharpkatz|katz|lsassy|handlekatz|ppldump|dumpcreds|invoke-powerdump|powerdump|sharpdpapi|sharpchrome|sharpweb|sharpsecdump|kekeo|donpapi|masky|webbrowserpassview|chromepass|mailpv|netpass|pspv|iepv|veeam-get-creds|veeamgetcreds)([-_.0-9a-z]*)?\\.(exe|dll|sys|py|ps1|zip|7z|rar)$",
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\windowsapps\\"
+      ]
+    },
+    {
+      "name": "impacket_tooling",
+      "title": "Impacket or NetExec tool binary",
+      "description": "wmiexec, smbexec, atexec, dcomexec, ntlmrelayx, GetUserSPNs, GetNPUsers, lookupsid, samrdump and their compiled forms, plus NetExec and CrackMapExec. The output files these tools leave on the target have their own rules.",
+      "severity": "high",
+      "category": "lateral_movement",
+      "mitre": [
+        "T1021.002",
+        "T1047",
+        "T1021.003"
+      ],
+      "name_regex": "(?i)^(wmiexec|smbexec|atexec|dcomexec|ntlmrelayx|getuserspns|getnpusers|lookupsid|samrdump|netexec|crackmapexec|nxc(?![a-z])|cme(?![a-z]))([-_.0-9a-z]*)?\\.(exe|py|zip|7z|rar)$",
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\windowsapps\\"
+      ]
+    },
+    {
+      "name": "procdump_utility",
+      "title": "ProcDump present",
+      "description": "Sysinternals ProcDump is a common way to dump LSASS.",
+      "severity": "medium",
+      "category": "credential_access",
+      "mitre": [
+        "T1003.001"
+      ],
+      "name_regex": "(?i)^procdump(64a?|64)?\\.exe$",
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\windowsapps\\"
+      ]
+    },
+    {
+      "name": "ntds_or_hive_copy",
+      "title": "NTDS.dit or registry hive outside its normal location",
+      "description": "Copies of ntds.dit, SAM, SYSTEM or SECURITY anywhere except System32\\config, \\Windows\\NTDS and the repair directory. Windows.old and upgrade staging are excluded. A minimum size keeps unrelated files with the same name out. Only the $MFT carries sizes, so this rule does not fire from $LogFile or $UsnJrnl rows.",
+      "severity": "critical",
+      "category": "credential_access",
+      "mitre": [
+        "T1003.003",
+        "T1003.002",
+        "T1003.004"
+      ],
+      "name_regex": "(?i)^(ntds\\.dit|sam|system|security)(\\.(bak|save|old|tmp|hive|hiv|reg|dat))?$",
+      "min_size": 4096,
+      "requires_path": true,
+      "path_not_contains": [
+        "\\system32\\config\\",
+        "\\syswow64\\config\\",
+        "\\windows\\ntds\\",
+        "\\windows\\repair\\",
+        "\\microsoft\\protect\\"
+      ]
+    },
+    {
+      "name": "secretsdump_output",
+      "title": "NTDS archive or secretsdump output",
+      "description": "ntds.zip and similar archives of the directory database, and the .ntds, .ntds.kerberos and .ntds.cleartext files secretsdump writes with -outputfile. Journal rows carry no size, so unlike the hive copy rule this one needs no minimum.",
+      "severity": "critical",
+      "category": "credential_access",
+      "mitre": [
+        "T1003.003",
+        "T1003.004"
+      ],
+      "name_regex": "(?i)^(ntds(\\.dit)?[-_.0-9a-z]*\\.(zip|7z|rar|gz|tar|cab)|.+\\.ntds(\\.kerberos|\\.cleartext)?)$"
+    },
+    {
+      "name": "kerberos_ticket_file",
+      "title": "Kerberos ticket file",
+      "description": ".kirbi is the Rubeus and Mimikatz ticket format, .ccache the Impacket one. Nothing on a Windows workstation writes either in normal use.",
+      "severity": "high",
+      "category": "credential_access",
+      "mitre": [
+        "T1558",
+        "T1550.003"
+      ],
+      "name_regex": "(?i)\\.(kirbi|ccache)$",
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\windowsapps\\"
+      ]
+    },
+    {
+      "name": "webshell_in_web_root",
+      "title": "Script file in a web root",
+      "description": "Server side script extensions under IIS, Exchange, Tomcat, XAMPP or WordPress directories. Exchange's own OWA and ECP pages, ASP.NET temporary compilation output, the Tomcat sample applications and the WordPress core, plugin and theme trees are excluded. aspnet_client and wp-content\\uploads are not excluded because they normally hold no scripts at all and are where ProxyShell and WordPress shells are dropped. On a web server the remaining hits still need review.",
+      "severity": "high",
+      "category": "persistence",
+      "mitre": [
+        "T1505.003"
+      ],
+      "extensions": [
+        ".aspx",
+        ".asp",
+        ".ashx",
+        ".asmx",
+        ".soap",
+        ".svc",
+        ".jsp",
+        ".jspx",
+        ".php",
+        ".phtml",
+        ".php5",
+        ".php7",
+        ".phar",
+        ".cfm",
+        ".cfc",
+        ".war"
+      ],
+      "path_contains": [
+        "\\inetpub\\wwwroot\\",
+        "\\frontend\\httpproxy\\",
+        "\\exchange server\\v15\\",
+        "\\xampp\\htdocs\\",
+        "\\wwwroot\\",
+        "\\webapps\\"
+      ],
+      "path_not_contains": [
+        "\\temporary asp.net files\\",
+        "\\owa\\prem\\",
+        "\\owa\\14.",
+        "\\owa\\15.",
+        "\\ecp\\15.",
+        "\\wp-includes\\",
+        "\\wp-admin\\",
+        "\\wp-content\\plugins\\",
+        "\\wp-content\\themes\\",
+        "\\vendor\\",
+        "\\phpmyadmin\\",
+        "\\xampp\\htdocs\\dashboard\\",
+        "\\xampp\\htdocs\\xampp\\",
+        "\\webapps\\examples\\",
+        "\\webapps\\manager\\",
+        "\\webapps\\host-manager\\",
+        "\\webapps\\docs\\"
+      ],
+      "noise_filter": false,
+      "path_not_regex": "(?i)\\\\(owa|ecp)\\\\auth\\\\(logon|logoff|errorfe|expiredpassword|signout|timeoutlogout|outlookcn|redirsuiteserviceproxy)\\.aspx$|\\\\ews\\\\(exchange|services)\\.asmx$|\\\\webapps\\\\root\\\\index\\.jsp$|\\\\(wp-(login|config|settings|load|blog-header|cron|links-opml|mail|activate|comments-post|signup|trackback)|xmlrpc)\\.php$"
+    },
+    {
+      "name": "webshell_known_name",
+      "title": "Web shell with a known name",
+      "description": "cmd.aspx, shell.php, c99.php, wso.php, b374k, JspSpy, spinstall0.aspx, human2.aspx, AntSword, Godzilla, Behinder, reGeorg and other published shells by file name, in a web root.",
+      "severity": "critical",
+      "category": "persistence",
+      "mitre": [
+        "T1505.003"
+      ],
+      "name_regex": "(?i)^(cmd(?![a-z])|cmdasp|shell(?![a-z])|webshell|aspxspy|c99|c100|r57|wso(?![a-z0-9])|b374k|jspspy|spinstall0|human2|antsword|chopper(?![a-z])|china[-_]?chopper|godzilla|behinder|regeorg|neoreg|tunnel(?![a-z])|reduh|weevely|p0wny(-?shell)?|phpspy|filesman|indoxploit|alfa(?![a-z])|sharpyshell|devilzshell|xxx(?![a-z]))([-_.0-9a-z]*)?\\.(aspx|asp|ashx|asmx|jsp|jspx|php|phtml|cfm|war)$",
+      "path_contains": [
+        "\\inetpub\\wwwroot\\",
+        "\\frontend\\httpproxy\\",
+        "\\exchange server\\v15\\",
+        "\\xampp\\htdocs\\",
+        "\\wwwroot\\",
+        "\\webapps\\"
+      ],
+      "path_not_contains": [
+        "\\vendor\\",
+        "\\wp-includes\\",
+        "\\wp-admin\\",
+        "\\node_modules\\"
+      ],
+      "noise_filter": false
+    },
+    {
+      "name": "executable_in_startup",
+      "title": "Executable or script in a Startup folder",
+      "description": "Anything runnable in a per user or all users Startup folder. Windows ships these folders empty. Shortcuts have their own rule at medium because a few products install one.",
+      "severity": "high",
+      "category": "persistence",
+      "mitre": [
+        "T1547.001"
+      ],
+      "extensions": [
+        ".exe",
+        ".dll",
+        ".ps1",
+        ".bat",
+        ".cmd",
+        ".vbs",
+        ".js",
+        ".scr",
+        ".hta"
+      ],
+      "path_contains": [
+        "\\start menu\\programs\\startup\\"
+      ],
+      "noise_filter": false
+    },
+    {
+      "name": "shortcut_in_startup",
+      "title": "Shortcut in a Startup folder",
+      "description": "A .lnk in a Startup folder. Office's Send to OneNote, Edge startup boost and the Epic launcher put one there, so the severity is medium. Check the target of anything else.",
+      "severity": "medium",
+      "category": "persistence",
+      "mitre": [
+        "T1547.001"
+      ],
+      "extensions": [
+        ".lnk"
+      ],
+      "path_contains": [
+        "\\start menu\\programs\\startup\\"
+      ],
+      "path_not_regex": "(?i)\\\\(send to onenote|microsoft edge|epic games launcher)[^\\\\]*\\.lnk$",
+      "noise_filter": false
+    },
+    {
+      "name": "scheduled_task_definition",
+      "title": "Scheduled task outside the Microsoft tree",
+      "description": "Task definitions in \\Windows\\System32\\Tasks that are not under Microsoft and not from a known updater. Vendor tasks will appear here and need a baseline to dismiss.",
+      "severity": "medium",
+      "category": "persistence",
+      "mitre": [
+        "T1053.005"
+      ],
+      "path_prefix": [
+        "\\windows\\system32\\tasks\\"
+      ],
+      "path_not_contains": [
+        "\\tasks\\microsoft\\"
+      ],
+      "path_not_regex": "(?i)\\\\tasks\\\\(microsoftedgeupdate|googleupdate|onedrive |onedrive standalone|adobe|mozillamaintenance|dropbox|brave|user_feed_synchronization|nvtmrep|nvdriverupdate|nvprofileupdater|nvnodelauncher|nvbatteryboost|firefox default browser agent|opera scheduled|npcapwatchdog|\\{[0-9a-f-]{36}\\})",
+      "noise_filter": false
+    },
+    {
+      "name": "executable_in_recycle_bin",
+      "title": "Executable in the Recycle Bin",
+      "description": "Runnable content under $Recycle.Bin. Deleted installers land here too, so the severity is medium. The $I metadata files are skipped, the matching $R file carries the content.",
+      "severity": "medium",
+      "category": "defense_evasion",
+      "mitre": [
+        "T1564",
+        "T1074.001"
+      ],
+      "extensions": [
+        ".exe",
+        ".dll",
+        ".ps1",
+        ".bat",
+        ".cmd",
+        ".vbs",
+        ".js",
+        ".scr",
+        ".hta",
+        ".sys"
+      ],
+      "path_contains": [
+        "\\$recycle.bin\\"
+      ],
+      "noise_filter": false,
+      "path_not_regex": "(?i)\\\\\\$recycle\\.bin\\\\[^\\\\]+\\\\\\$i[^\\\\]*$"
+    },
+    {
+      "name": "executable_in_windows_temp",
+      "title": "Executable or script in \\Windows\\Temp",
+      "description": "Windows Update, Defender and CBS staging directories are excluded because they write executables here as part of normal operation. Drivers count too, since vulnerable drivers used to kill EDR are staged here.",
+      "severity": "medium",
+      "category": "execution",
+      "mitre": [
+        "T1105",
+        "T1074.001"
+      ],
+      "extensions": [
+        ".exe",
+        ".dll",
+        ".ps1",
+        ".bat",
+        ".cmd",
+        ".vbs",
+        ".js",
+        ".scr",
+        ".hta",
+        ".sys"
+      ],
+      "path_prefix": [
+        "\\windows\\temp\\"
+      ],
+      "path_not_contains": [
+        "\\temp\\cab_",
+        "\\temp\\mpcmdrun",
+        "\\temp\\wpr_",
+        "\\temp\\msdt",
+        "\\temp\\dd_",
+        "\\temp\\vmware-",
+        "\\temp\\chocolatey\\",
+        "\\temp\\{",
+        "\\temp\\sdiag_",
+        "\\temp\\mpam-"
+      ]
+    },
+    {
+      "name": "executable_in_user_temp",
+      "title": "Executable or script in a user Temp directory",
+      "description": "The noisiest location on a workstation because installers extract here. Common extraction and updater directory patterns, Edge BITS downloads and the PowerShell policy test scripts are excluded and the severity is low. Look for Mark-of-the-Web or another rule hit on the same file before acting on it.",
+      "severity": "low",
+      "category": "execution",
+      "mitre": [
+        "T1105",
+        "T1074.001"
+      ],
+      "extensions": [
+        ".exe",
+        ".dll",
+        ".ps1",
+        ".bat",
+        ".cmd",
+        ".vbs",
+        ".js",
+        ".scr",
+        ".hta",
+        ".sys"
+      ],
+      "path_prefix": [
+        "\\users\\"
+      ],
+      "path_contains": [
+        "\\appdata\\local\\temp\\"
+      ],
+      "path_not_regex": "(?i)\\\\(is-[0-9a-z]{5,8}\\.tmp|_is[0-9a-f]+|nsd[0-9a-f]+\\.tmp|~nsu\\.tmp|\\{[0-9a-f-]{36}\\}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f-]{4,}|scoped_dir[0-9_]+|chrome_[a-z]+_\\d+|edge_bits_\\d+|__psscriptpolicytest_[^\\\\]+)"
+    },
+    {
+      "name": "executable_in_user_media_folder",
+      "title": "Executable in a user media or shell folder",
+      "description": "Pictures, Music, Videos, Contacts, Favorites, Links, Saved Games, Searches and 3D Objects directly under a profile or its OneDrive folder. They hold user content and shortcuts, never executables. Directories of the same name deeper in the profile are left to the other location rules.",
+      "severity": "high",
+      "category": "execution",
+      "mitre": [
+        "T1204.002",
+        "T1074.001"
+      ],
+      "extensions": [
+        ".exe",
+        ".dll",
+        ".sys",
+        ".scr",
+        ".com",
+        ".pif",
+        ".bat",
+        ".cmd",
+        ".ps1",
+        ".psm1",
+        ".vbs",
+        ".vbe",
+        ".js",
+        ".jse",
+        ".wsf",
+        ".hta",
+        ".msi",
+        ".cpl",
+        ".jar"
+      ],
+      "path_regex": "(?i)^\\\\users\\\\[^\\\\]+\\\\(onedrive[^\\\\]*\\\\)?(pictures|my pictures|music|my music|videos|my videos|contacts|favorites|links|saved games|searches|3d objects)\\\\"
+    },
+    {
+      "name": "executable_on_desktop_or_documents",
+      "title": "Executable on the Desktop or in Documents",
+      "description": "Users keep the occasional installer here, so the severity is medium. Per user PowerShell modules, Visual Studio projects, game saves, source trees such as Documents\\GitHub and the shared noise directories such as node_modules are excluded. OneDrive redirected folders match as well because the match is on the folder name.",
+      "severity": "medium",
+      "category": "execution",
+      "mitre": [
+        "T1204.002"
+      ],
+      "extensions": [
+        ".exe",
+        ".dll",
+        ".sys",
+        ".scr",
+        ".com",
+        ".pif",
+        ".bat",
+        ".cmd",
+        ".ps1",
+        ".psm1",
+        ".vbs",
+        ".vbe",
+        ".js",
+        ".jse",
+        ".wsf",
+        ".hta",
+        ".msi",
+        ".cpl",
+        ".jar"
+      ],
+      "path_contains": [
+        "\\desktop\\",
+        "\\documents\\",
+        "\\my documents\\"
+      ],
+      "path_not_contains": [
+        "\\documents\\windowspowershell\\",
+        "\\documents\\powershell\\",
+        "\\documents\\visual studio",
+        "\\documents\\my games\\",
+        "\\documents\\arduino\\",
+        "\\documents\\github\\",
+        "\\documents\\projects\\",
+        "\\documents\\repos\\",
+        "\\documents\\source\\",
+        "\\public\\documents\\embarcadero\\",
+        "\\public\\documents\\autodesk\\",
+        "\\public\\documents\\rad studio\\",
+        "\\public\\documents\\hyper-v\\"
+      ]
+    },
+    {
+      "name": "executable_in_public_or_perflogs",
+      "title": "Executable in Users\\Public or PerfLogs",
+      "description": "Neither directory holds executables on a normal system, and both are writable by every user. Embarcadero, Autodesk and Hyper-V keep product files under Public\\Documents and are excluded. Drivers count too, since vulnerable drivers used to kill EDR are staged here.",
+      "severity": "high",
+      "category": "execution",
+      "mitre": [
+        "T1105",
+        "T1074.001"
+      ],
+      "extensions": [
+        ".exe",
+        ".dll",
+        ".ps1",
+        ".bat",
+        ".cmd",
+        ".vbs",
+        ".js",
+        ".scr",
+        ".hta",
+        ".sys"
+      ],
+      "path_prefix": [
+        "\\users\\public\\",
+        "\\perflogs\\"
+      ],
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\public\\documents\\embarcadero\\",
+        "\\public\\documents\\autodesk\\",
+        "\\public\\documents\\rad studio\\",
+        "\\public\\documents\\hyper-v\\"
+      ]
+    },
+    {
+      "name": "executable_in_volume_root",
+      "title": "Executable directly in the volume root",
+      "description": "Nothing runnable lives in the root of a system volume apart from the page, hibernation and swap files, the WinPE page file and the legacy DOS files. Operators drop tools and payloads here because the path is short to type.",
+      "severity": "high",
+      "category": "execution",
+      "mitre": [
+        "T1105",
+        "T1074.001"
+      ],
+      "extensions": [
+        ".exe",
+        ".dll",
+        ".sys",
+        ".scr",
+        ".com",
+        ".pif",
+        ".bat",
+        ".cmd",
+        ".ps1",
+        ".psm1",
+        ".vbs",
+        ".vbe",
+        ".js",
+        ".jse",
+        ".wsf",
+        ".hta",
+        ".msi",
+        ".cpl",
+        ".jar"
+      ],
+      "path_regex": "(?i)^\\\\[^\\\\]+$",
+      "name_regex": "(?i)^(?!(hiberfil|pagefile|swapfile|winpepge|config|io|msdos|autoexec|bootmgr|bootsect|ntldr|ntdetect)\\.)",
+      "noise_filter": false
+    },
+    {
+      "name": "executable_in_root_staging_dir",
+      "title": "Executable in a short root level directory",
+      "description": "Runnable content directly in \\Temp, \\Tmp, \\Share, \\Upload or a root directory with a name of one to three characters, such as \\1 or \\ab. These are created by operators for staging and by installers for extraction, so the severity is medium.",
+      "severity": "medium",
+      "category": "execution",
+      "mitre": [
+        "T1105",
+        "T1074.001"
+      ],
+      "extensions": [
+        ".exe",
+        ".dll",
+        ".sys",
+        ".scr",
+        ".com",
+        ".pif",
+        ".bat",
+        ".cmd",
+        ".ps1",
+        ".psm1",
+        ".vbs",
+        ".vbe",
+        ".js",
+        ".jse",
+        ".wsf",
+        ".hta",
+        ".msi",
+        ".cpl",
+        ".jar"
+      ],
+      "path_regex": "(?i)^\\\\(temp|tmp|share|shared|upload|uploads|[a-z0-9]{1,3})\\\\[^\\\\]+$",
+      "noise_filter": false
+    },
+    {
+      "name": "hta_in_user_directory",
+      "title": "HTML application in a user or writable directory",
+      "description": "An .hta under Users, ProgramData, PerfLogs or Windows\\Temp. Software does not ship HTML applications there; ransom notes such as Phobos and Dharma's info.hta and phishing lures do.",
+      "severity": "medium",
+      "category": "execution",
+      "mitre": [
+        "T1218.005",
+        "T1486"
+      ],
+      "extensions": [
+        ".hta"
+      ],
+      "path_prefix": [
+        "\\users\\",
+        "\\programdata\\",
+        "\\perflogs\\",
+        "\\windows\\temp\\"
+      ],
+      "path_not_contains": [
+        "\\appdata\\local\\microsoft\\",
+        "\\appdata\\roaming\\microsoft\\",
+        "\\appdata\\local\\packages\\",
+        "\\node_modules\\",
+        "\\site-packages\\"
+      ],
+      "noise_filter": false
+    },
+    {
+      "name": "executable_in_programdata",
+      "title": "Executable in a non vendor ProgramData folder",
+      "description": "Vendor subtrees under ProgramData are removed by the shared noise list. Whatever remains is either an unknown product or an attacker. Drivers count too, since vulnerable drivers used to kill EDR are staged here.",
+      "severity": "medium",
+      "category": "execution",
+      "mitre": [
+        "T1105",
+        "T1074.001"
+      ],
+      "extensions": [
+        ".exe",
+        ".dll",
+        ".ps1",
+        ".bat",
+        ".cmd",
+        ".vbs",
+        ".js",
+        ".scr",
+        ".hta",
+        ".sys"
+      ],
+      "path_prefix": [
+        "\\programdata\\"
+      ]
+    },
+    {
+      "name": "executable_in_programdata_microsoft",
+      "title": "Executable under ProgramData\\Microsoft outside the product trees",
+      "description": "ProgramData\\Microsoft is on the shared noise list because Defender, Edge update, Click-to-Run and Visual Studio keep executables there. Those subtrees are excluded here and the rest of the tree is reported, since Crypto, Network, Windows\\Start Menu and the other state directories hold no executables and are a favourite for staging.",
+      "severity": "medium",
+      "category": "execution",
+      "mitre": [
+        "T1105",
+        "T1074.001"
+      ],
+      "extensions": [
+        ".exe",
+        ".dll",
+        ".ps1",
+        ".bat",
+        ".cmd",
+        ".vbs",
+        ".js",
+        ".scr",
+        ".hta",
+        ".sys"
+      ],
+      "path_prefix": [
+        "\\programdata\\microsoft\\"
+      ],
+      "path_not_contains": [
+        "\\windows defender",
+        "\\windows security health\\",
+        "\\edgeupdate\\",
+        "\\clicktorun\\",
+        "\\teams\\",
+        "\\visualstudio\\",
+        "\\windows\\containers\\",
+        "\\appv\\",
+        "\\windows\\wer\\",
+        "\\windows\\apprepository\\",
+        "\\windows\\retaildemo\\",
+        "\\onedrive\\",
+        "\\netframework\\",
+        "\\office\\",
+        "\\uev\\",
+        "\\windows nt\\",
+        "\\intune",
+        "\\azure",
+        "\\mdm\\",
+        "\\monitoring agent\\",
+        "\\system center\\",
+        "\\configmgr"
+      ],
+      "noise_filter": false
+    },
+    {
+      "name": "executable_in_windows_root",
+      "title": "Executable or script directly in \\Windows",
+      "description": "About ten executables ship in the root of \\Windows, plus Sysmon when installed under its default name. Anything else needs an explanation. This catches a PsExec service renamed with -r and the batch files smbexec drops.",
+      "severity": "high",
+      "category": "lateral_movement",
+      "mitre": [
+        "T1569.002",
+        "T1036.005"
+      ],
+      "extensions": [
+        ".exe",
+        ".dll",
+        ".sys",
+        ".scr",
+        ".com",
+        ".bat",
+        ".cmd",
+        ".ps1",
+        ".vbs",
+        ".js"
+      ],
+      "path_regex": "(?i)^\\\\windows\\\\[^\\\\]+$",
+      "name_regex": "(?i)^(?!(helppane|bfsvc|explorer|hh|notepad|regedit|splwow64|twain_32|winhlp32|write|py|pyw|mib|regedt32|sysmon|sysmon64|sysmondrv|rtlexupd|twunk_16|twunk_32|fveupdate)\\.)",
+      "noise_filter": false
+    },
+    {
+      "name": "executable_in_writable_windows_dir",
+      "title": "Executable in a writable \\Windows subdirectory",
+      "description": "Tasks, Debug, Tracing, PLA, Registration\\CRMLog, System32\\Tasks, FxsTmp, com\\dmp, spool\\drivers\\color, the local GroupPolicy scripts folders and the Temp and Roaming directories of the service profiles. Every user can write to these, so they are the usual choice for staging inside \\Windows. Installer extraction directories and the Defender definition packages Windows Update fetches into the NetworkService profile are excluded.",
+      "severity": "high",
+      "category": "execution",
+      "mitre": [
+        "T1036.005",
+        "T1105"
+      ],
+      "extensions": [
+        ".exe",
+        ".dll",
+        ".sys",
+        ".scr",
+        ".com",
+        ".pif",
+        ".bat",
+        ".cmd",
+        ".ps1",
+        ".psm1",
+        ".vbs",
+        ".vbe",
+        ".js",
+        ".jse",
+        ".wsf",
+        ".hta",
+        ".msi",
+        ".cpl",
+        ".jar"
+      ],
+      "path_regex": "(?i)^\\\\windows\\\\(tasks|debug|tracing|pla|registration\\\\crmlog|(system32|syswow64)\\\\(tasks|fxstmp|com\\\\dmp|spool\\\\drivers\\\\color|spool\\\\printers|microsoft\\\\crypto\\\\rsa\\\\machinekeys|grouppolicy|grouppolicyusers)|serviceprofiles\\\\[^\\\\]+\\\\appdata\\\\(local\\\\temp|roaming)|(system32|syswow64)\\\\config\\\\systemprofile\\\\appdata\\\\(local\\\\temp|roaming))\\\\",
+      "path_not_regex": "(?i)\\\\(is-[0-9a-z]{5,8}\\.tmp|_is[0-9a-f]+|nsd[0-9a-f]+\\.tmp|~nsu\\.tmp|\\{[0-9a-f-]{36}\\}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f-]{4,}|scoped_dir[0-9_]+|chrome_[a-z]+_\\d+|edge_bits_\\d+|__psscriptpolicytest_[^\\\\]+)",
+      "path_not_contains": [
+        "\\temp\\mpam-"
+      ]
+    },
+    {
+      "name": "sysvol_executable",
+      "title": "Executable in SYSVOL",
+      "description": "An executable, installer or driver under SYSVOL on a domain controller. Ransomware operators stage the payload here and push it with a GPO so every domain member fetches it. Software deployment through SYSVOL is rare and worth confirming.",
+      "severity": "high",
+      "category": "lateral_movement",
+      "mitre": [
+        "T1484.001",
+        "T1570"
+      ],
+      "extensions": [
+        ".exe",
+        ".dll",
+        ".sys",
+        ".scr",
+        ".com",
+        ".msi",
+        ".cpl"
+      ],
+      "path_contains": [
+        "\\sysvol\\"
+      ],
+      "noise_filter": false
+    },
+    {
+      "name": "sysvol_script",
+      "title": "Script in SYSVOL",
+      "description": "Logon, startup and GPO scripts under SYSVOL. Most domains have a few legitimate ones, so check the timestamps against the incident window and read the content.",
+      "severity": "medium",
+      "category": "lateral_movement",
+      "mitre": [
+        "T1484.001",
+        "T1037.003"
+      ],
+      "extensions": [
+        ".bat",
+        ".cmd",
+        ".ps1",
+        ".psm1",
+        ".vbs",
+        ".vbe",
+        ".js",
+        ".jse",
+        ".wsf",
+        ".hta"
+      ],
+      "path_contains": [
+        "\\sysvol\\"
+      ],
+      "noise_filter": false
+    },
+    {
+      "name": "cobalt_strike_beacon_names",
+      "title": "Default payload name from a C2 framework",
+      "description": "beacon, artifact, stager and shellcode from Cobalt Strike, demon from Havoc, badger from Brute Ratel, grunt from Covenant, sliver, payload and the other framework defaults, with the usual arch and format suffixes. Operators who rename payloads will not match.",
+      "severity": "high",
+      "category": "command_and_control",
+      "mitre": [
+        "T1105"
+      ],
+      "name_regex": "(?i)^(beacon|smb_?beacon|http_?beacon|https_?beacon|dns_?beacon|stager|shellcode|artifact(?![a-z])|demon(?![a-z])|badger(?![a-z])|sliver(?![a-z])|payload(?![a-z])|grunt(http|https|smb|stager|bridge)?(?![a-z])|havoc(?![a-z])|brute[-_]?ratel|covenant(?![a-z])|poshc2|koadic|mythic(?![a-z])|adaptix(?![a-z]))([-_.](x86|x64|dll|svc|srv|exe|http|https|smb|tcp|dns|\\d{1,4}))*\\.(exe|dll|bin|ps1)$",
+      "noise_filter": false
+    },
+    {
+      "name": "remote_access_tooling",
+      "title": "Remote access tool binary",
+      "description": "AnyDesk, ScreenConnect, Atera, Splashtop, TeamViewer QuickSupport, NetSupport client32.exe, Action1, Zoho Assist, the VNC servers, Radmin, DameWare and other remote access tools are used for hands on keyboard access after initial compromise.",
+      "severity": "medium",
+      "category": "command_and_control",
+      "mitre": [
+        "T1219.002"
+      ],
+      "name_regex": "(?i)^(anydesk|screenconnect|connectwise(control)?|atera|splashtop|rustdesk|meshagent|supremo|dwagent|gotoassist|remoteutilities|rutserv|rfusclient|ammyy|aa_v3|ultraviewer|simplehelp|pulseway|syncro|tacticalrmm|bomgar|ninjarmmagent|logmein|teamviewer_?qs|tv_w32|tv_x64|client32|action1_agent|action1_remote|action1|zohoassist|za_access|za_connect|fleetdeck|getscreen|tightvnc|ultravnc|uvnc|winvnc|vncviewer|radmin|rserver|dwrcs|dameware|remotepc)([-_.0-9a-z]*)?\\.exe$",
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\windowsapps\\"
+      ]
+    },
+    {
+      "name": "tunnelling_tooling",
+      "title": "Tunnelling or port forwarding tool",
+      "description": "ngrok, chisel, ligolo, frp, gost, cloudflared, netcat and its variants, htran and similar tools expose RDP or SMB to the operator through the perimeter.",
+      "severity": "high",
+      "category": "command_and_control",
+      "mitre": [
+        "T1572",
+        "T1090"
+      ],
+      "name_regex": "(?i)^(ngrok|chisel|ligolo(-ng)?|ligolo-agent|frpc|frps|gost(?![a-z])|revsocks|rsocx|socat|cloudflared|sshuttle|nc(?![a-z])|ncat|netcat|powercat|iox(?![a-z])|stowaway|htran(?![a-z])|lcx(?![a-z])|earthworm|rakshasa)([-_.0-9a-z]*)?\\.(exe|ps1|zip|7z|rar)$",
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\windowsapps\\"
+      ]
+    },
+    {
+      "name": "network_scanner_tooling",
+      "title": "Network or port scanner",
+      "description": "Advanced IP Scanner, SoftPerfect NetScan, Angry IP Scanner, nmap, masscan, fscan and similar. Present in most ransomware intrusions during discovery.",
+      "severity": "high",
+      "category": "discovery",
+      "mitre": [
+        "T1046",
+        "T1018"
+      ],
+      "name_regex": "(?i)^(netscan|netscan_portable|netscan64|advanced_ip_scanner|advanced_port_scanner|advancedipscanner|ipscan|angryip|nmap|zenmap|masscan|nbtscan|softperfect[a-z_]*|zmap|rustscan|naabu|fscan|kportscan)([-_.0-9a-z]*)?\\.(exe|zip|7z|rar)$",
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\windowsapps\\"
+      ]
+    },
+    {
+      "name": "ad_recon_tooling",
+      "title": "Active Directory enumeration or privilege escalation tool",
+      "description": "AdFind, SharpHound, AzureHound, BloodHound, Seatbelt, Rubeus, Kerbrute, PowerView, Snaffler, Certify, ADRecon and their Invoke- forms, plus PowerUp, SharpUp and winPEAS for local privilege escalation. AD Explorer and PingCastle are included because attackers use them to map the directory, although administrators use them too.",
+      "severity": "high",
+      "category": "discovery",
+      "mitre": [
+        "T1087.002",
+        "T1482",
+        "T1069.002",
+        "T1558"
+      ],
+      "name_regex": "(?i)^(invoke-)?(adfind|sharphound|azurehound|bloodhound|seatbelt|rubeus|kerbrute|kerberoast|powerview|sharpview|ldapdomaindump|adexplorer(64)?|adrecon|certify(?![a-z])|certipy|snaffler|pingcastle|sharpshares|soaphound|group3r|powerup(?![a-z])|sharpup|winpeas[a-z0-9]*|privesccheck)([-_.0-9a-z]*)?\\.(exe|ps1|zip|7z|rar|dat|bat)$",
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\windowsapps\\",
+        "\\certifytheweb\\"
+      ]
+    },
+    {
+      "name": "edr_killer_tooling",
+      "title": "Security tool tampering utility",
+      "description": "Process Hacker and System Informer, PCHunter, GMER, PowerTool, Defender Control and the vulnerable driver loaders sold as EDR killers. Process Hacker has legitimate users, the rest are almost never part of a baseline.",
+      "severity": "high",
+      "category": "defense_evasion",
+      "mitre": [
+        "T1685",
+        "T1068"
+      ],
+      "name_regex": "(?i)^(pchunter(32|64)?|processhacker|kprocesshacker|systeminformer|gmer|powertool(64)?|hrsword|aukill|backstab|edrsandblast|spyboy|terminator|defendercontrol|defender_control|dcontrol|killav|edrkill[a-z]*|truesight[a-z]*|zam64|zamguard(32|64)?|avneutralizer|edrsilencer|defendnot)([-_.0-9a-z]*)?\\.(exe|sys|zip|7z|rar)$",
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\windowsapps\\"
+      ]
+    },
+    {
+      "name": "vulnerable_driver_name",
+      "title": "Driver known to be abused to kill security tools",
+      "description": "ThrottleStop, RTCore64, DBUtil, gdrv, aswArPot, mhyprot2, iqvw64e, zam64, TrueSight, viragt64, PROCEXP152 and the other signed drivers loaded to terminate EDR from the kernel, plus the kdmapper loader. Process Explorer installs PROCEXP152.sys on an administrator's machine, the rest are not part of any baseline.",
+      "severity": "high",
+      "category": "defense_evasion",
+      "mitre": [
+        "T1068",
+        "T1685"
+      ],
+      "name_regex": "(?i)^((throttlestop|throttleblood|rtcore64|dbutil_2_3|dbutildrv2|gdrv|aswarpot|mhyprot2|mhyprot3|iqvw64e?|zam64|zamguard(32|64)?|truesight|viragt64|wnbios64|phymem64|physmem|capcom|elrawdsk|rzpnk|kevp64|kapcdrv|procexp152|procexp(?![a-z])|amifldrv64|bs_hwmio64|msio64|ntiolib|atszio|glckio2|dbk64)[-_.0-9a-z]*\\.sys|kdmapper[-_.0-9a-z]*\\.exe)$",
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\windowsapps\\"
+      ]
+    },
+    {
+      "name": "exfiltration_tooling",
+      "title": "Cloud sync tool used for exfiltration",
+      "description": "rclone, its rclone.conf, the MEGA clients and the LockBit and BlackByte exfiltration tools StealBit and ExByte are the usual choice for bulk exfiltration and are rarely part of a corporate baseline.",
+      "severity": "high",
+      "category": "exfiltration",
+      "mitre": [
+        "T1567.002"
+      ],
+      "name_regex": "(?i)^((rclone|megacmd|megasync|megaclient|stealbit|exbyte|exmatter)([-_.0-9a-z]*)?\\.exe|rclone\\.conf)$",
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\windowsapps\\"
+      ]
+    },
+    {
+      "name": "file_transfer_tooling",
+      "title": "SSH, SCP or FTP client utility",
+      "description": "WinSCP, FileZilla, S3 Browser, AzCopy, Cyberduck, wget and PuTTY with its pscp, psftp and plink. Ordinary tools on an administrator's machine and a finding on an ordinary user's machine, where they are used for exfiltration and tunnelling.",
+      "severity": "medium",
+      "category": "exfiltration",
+      "mitre": [
+        "T1048",
+        "T1572"
+      ],
+      "name_regex": "(?i)^(winscp|pscp|psftp|plink|putty|s3browser|filezilla|azcopy|cyberduck|wget)([-_.0-9a-z]*)?\\.exe$",
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\windowsapps\\"
+      ]
+    },
+    {
+      "name": "archive_staged_in_writable_dir",
+      "title": "Large archive in a writable directory",
+      "description": "Archives of 50 MB or more in the directories operators stage data in. Backup product output is excluded. Sizes come from the $MFT only, so this rule does not fire from journal rows.",
+      "severity": "medium",
+      "category": "collection",
+      "mitre": [
+        "T1560.001",
+        "T1074.001"
+      ],
+      "extensions": [
+        ".7z",
+        ".zip",
+        ".rar",
+        ".tar",
+        ".gz",
+        ".cab",
+        ".ace"
+      ],
+      "path_prefix": [
+        "\\windows\\temp\\",
+        "\\users\\public\\",
+        "\\perflogs\\",
+        "\\$recycle.bin\\",
+        "\\temp\\",
+        "\\tmp\\"
+      ],
+      "path_not_contains": [
+        "\\backup\\",
+        "\\veeam\\",
+        "\\acronis\\"
+      ],
+      "min_size": 52428800,
+      "path_not_regex": "(?i)\\\\\\$recycle\\.bin\\\\[^\\\\]+\\\\\\$i[^\\\\]*$"
+    },
+    {
+      "name": "archiver_outside_program_files",
+      "title": "Portable archiver outside Program Files",
+      "description": "7z.exe, 7za.exe, rar.exe or winrar.exe outside Program Files, Chocolatey and Scoop. Operators bring their own archiver to stage data before exfiltration. Installed archivers are on nearly every machine, so those are the one installed tool that is not reported.",
+      "severity": "medium",
+      "category": "collection",
+      "mitre": [
+        "T1560.001"
+      ],
+      "name_regex": "(?i)^(7z|7za|7zg|7zr|rar|winrar|unrar)\\.exe$",
+      "path_not_prefix": [
+        "\\program files\\",
+        "\\program files (x86)\\"
+      ],
+      "path_not_contains": [
+        "\\chocolatey\\",
+        "\\scoop\\",
+        "\\site-packages\\",
+        "\\windowsapps\\",
+        "\\node_modules\\",
+        "\\7zip-bin\\",
+        "\\winget\\",
+        "\\.nuget\\"
+      ],
+      "noise_filter": false
+    },
+    {
+      "name": "shadow_copy_tool_out_of_place",
+      "title": "Backup or shadow copy utility outside System32",
+      "description": "A copy of vssadmin, wbadmin, bcdedit or diskshadow outside System32 is a way past application allowlisting before deleting shadow copies.",
+      "severity": "high",
+      "category": "impact",
+      "mitre": [
+        "T1490"
+      ],
+      "name_regex": "(?i)^(vssadmin|wbadmin|bcdedit|diskshadow)\\.exe$",
+      "path_not_prefix": [
+        "\\windows\\system32\\",
+        "\\windows\\syswow64\\",
+        "\\windows\\winsxs\\",
+        "\\windows\\servicing\\",
+        "\\windows.old\\",
+        "\\$windows.~bt\\",
+        "\\$windows.~ws\\"
+      ],
+      "requires_path": true,
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\containers\\baseimages\\"
+      ]
+    },
+    {
+      "name": "ransomware_binary_name",
+      "title": "Executable named after a ransomware family or an encryptor",
+      "description": "locker.exe, encryptor.exe, lb3.exe, akira.exe, conti.exe and similar. Affiliates rarely rename the payload. Installed software under Program Files, Chocolatey and Scoop is excluded.",
+      "severity": "high",
+      "category": "impact",
+      "mitre": [
+        "T1486"
+      ],
+      "name_regex": "(?i)^(locker|encryptor|cryptor|decryptor|lb3|lockbit|akira|conti(?![a-z])|blackbasta|black_basta|ryuk|nefilim|phobos|revil|sodinokibi|darkside|babuk|avaddon|blackbyte|lockfile|zeppelin|makop|dharma|magniber|qilin|rhysida|medusalocker|blacksuit)[-_.0-9a-z]*\\.(exe|dll)$",
+      "path_not_prefix": [
+        "\\program files\\",
+        "\\program files (x86)\\"
+      ],
+      "path_not_contains": [
+        "\\chocolatey\\",
+        "\\scoop\\",
+        "\\site-packages\\",
+        "\\windowsapps\\"
+      ],
+      "noise_filter": false
+    },
+    {
+      "name": "ransom_note_filename",
+      "title": "Ransom note file name",
+      "description": "How to decrypt, restore your files, all your files are encrypted, decryption instructions, help decrypt, readme for decrypt, look at this instruction, CriticalBreachDetected.pdf and the Portuguese and Spanish forms.",
+      "severity": "critical",
+      "category": "impact",
+      "mitre": [
+        "T1486"
+      ],
+      "name_regex": "(?i)^[!#@+]{0,3}[-_ ]*(how[-_ ]?to[-_ ]?(decrypt|recover|restore|unlock|back|return|get[-_ ]?back)[-_ ]?((your|my|all|ur)[-_ ]?)?(files|data)(?![a-z])|how[-_ ]?to[-_ ]?decrypt(?=[-_ !#@+]*\\.)|how[-_ ]?to[-_ ]?get[-_ ]?(your|my|all|ur)[-_ ]?(files|data)[-_ ]?back(?![a-z])|get[-_ ]?(your|my|all|ur)[-_ ]?(files|data)[-_ ]?back(?![a-z])|decrypt[-_ ]?((your|my|all|ur)[-_ ]?)?(files|data|instructions|me|now)(?![a-z])|(recover|restore|unlock|return)[-_ ]?(your|my|all|ur)[-_ ]?(files|data)(?![a-z])|(decrypt|recover)[-_][a-z0-9]{2,12}[-_](files|data)(?![a-z])|[a-z0-9]{2,24}[-_](restore|recover|unlock)[-_ ]?(your|my|all|ur)[-_ ]?(files|data)(?![a-z])|(all[-_ ]?)?(your|my|all|ur)[-_ ]?(files|data|documents)[-_ ]?(are|were|have[-_ ]?been|has[-_ ]?been|is)?[-_ ]?(encrypted|stolen|locked)(?![a-z])|(all[-_ ]?)?(files|data|documents)[-_ ]?(are|were|have[-_ ]?been|has[-_ ]?been|is)?[-_ ]?(encrypted|stolen|locked)(?=[-_ !#@+]*\\.)|help[-_ ]?(decrypt|(your|my|all|ur)[-_ ]?(files|data)|security[-_ ]?event)(?![a-z])|decryption[-_ ]?(instructions|information|manual|notes|guide|id|key)(?![a-z])|faq[-_ ]?for[-_ ]?decrypt|read[-_ ]?me[-_ ]?((to|for)[-_ ]?)?(decrypt|recover|restore|unlock)|(instructions|readme)[-_ ]?(read[-_ ]?me|warning)(?![a-z])|look[-_ ]?at[-_ ]?this[-_ ]?instruction|criticalbreachdetected|como[-_ ]?(recuperar|restaurar|descriptografar|desencriptar|descifrar|desbloquear)[-_ ]?((seus|sus|os|los|tus|mis|meus|todos[-_ ]?(os|sus))[-_ ]?)?(arquivos|archivos|ficheiros|dados|datos)(?![a-z])|(recuperar|restaurar|recupere|restaure|descriptografar|desencriptar|descifrar)[-_ ]?((seus|sus|os|los|tus|mis|meus|todos[-_ ]?(os|sus))[-_ ]?)?(arquivos|archivos|ficheiros|dados|datos)(?![a-z])|((seus|sus|os|los|tus|mis|meus|todos[-_ ]?(os|sus))[-_ ]?)?(arquivos|archivos|ficheiros)[-_ ]?(foram|estao|estão|han[-_ ]?sido|estan|están)?[-_ ]?(criptografados|encriptados|cifrados)(?![a-z]))[-_ .a-z0-9!#@+]*\\.(txt|hta|html|htm|rtf|onion|pdf)$",
+      "noise_filter": false
+    },
+    {
+      "name": "ransom_note_phrase",
+      "title": "Ransom note phrase in file name",
+      "description": "Restore instructions, recovery information, file recovery, what happened, please read me, read it, _readme.txt, a word followed by decrypt, how to recover with no object and a decorated leia-me or leeme. Real notes use these names and so does the occasional user file, so this is high rather than critical.",
+      "severity": "high",
+      "category": "impact",
+      "mitre": [
+        "T1486"
+      ],
+      "name_regex": "(?i)^([!#@+]{0,3}[-_ ]*(how[-_ ]?to[-_ ]?(recover|restore|unlock|back|return)(?=[-_ !#@+]*\\.)|como[-_ ]?(recuperar|restaurar|descriptografar|desencriptar|descifrar|desbloquear)(?=[-_ !#@+]*\\.)|(recover|restore|unlock)[-_ ]?(files|data|instructions|me|now)(?![a-z])|(restore|unlock)[-_][a-z0-9]{2,12}[-_](files|data)(?![a-z])|recovery[-_ ]?(your|my|all|ur)[-_ ]?(files|data)(?![a-z])|help[-_ ]?(restore|recover)(?![a-z])|recovery[-_ ]?(instructions|information|manual|notes)(?![a-z])|file[-_ ]?recovery(?=[-_ !#@+]*\\.)|what[-_ ]?happened(?=[-_ !#@+]*\\.)|please[-_ ]?read[-_ ]?me|read[-_ ]?it(?=[-_ !#@+]*\\.)|_+read[-_ ]?me(?=\\.)|[a-z0-9]{2,24}[-_](decrypt(?![a-z])|(restore|recover|unlock)[-_ ]?(files|data)(?![a-z])))[-_ .a-z0-9!#@+]*|[!#@+]{1,3}[-_ ]*(leia[-_ ]?me|leeme|lee[-_ ]?me|lisez[-_ ]?moi|liesmich)[-_ .a-z0-9!#@+]*)\\.(txt|hta|html|htm|rtf|onion)$",
+      "noise_filter": false
+    },
+    {
+      "name": "ransom_note_family_named",
+      "title": "Ransom note named after a family",
+      "description": "A known family name next to readme, decrypt, restore, recover, help or instructions: akira_readme.txt, LOCKBIT-README.hta, cAcTuS.readme.txt, README.BlackSuit.txt, RyukReadMe.html. Families whose name is an ordinary word, such as Royal, Play or Medusa, only match with decrypt, restore or recover, or after a decorator as in !!!READ_ME_MEDUSA!!!.txt.",
+      "severity": "critical",
+      "category": "impact",
+      "mitre": [
+        "T1486"
+      ],
+      "name_regex": "(?i)^([!#@+]{0,3}[-_ ]*(akira|lockbit|lockbit3|conti|black[-_ ]?basta|blacksuit|qilin|medusalocker|rhysida|8base|bianlian|clop|cl0p|alphv|blackcat|nokoyawa|trigona|mallox|phobos|dharma|makop|ransomhub|cicada3301|dragonforce|sarcoma|safepay|brain[-_ ]?cipher|ryuk|nefilim|nemty|egregor|darkside|revil|sodinokibi|netwalker|babuk|avaddon|blackbyte|vice[-_ ]?society|zeppelin|ragnar|karakurt|hellcat|avoslocker|yanluowang|pysa|mespinoza|doppelpaymer|bitpaymer|wannacry|gandcrab|cerber|locky|djvu|cactus|lockfile|hunters[-_ ]?international|inc|helldown|monti|ranzy|notpetya|dridex|anubis|devman|cicada|3am)[-_ .]?(read[-_ ]?me|decrypt|restore|recover|help|instructions)([-_ ]?(your|my|all|ur)?[-_ ]?(files|data))?(?![a-z])|[!#@+]{0,3}[-_ ]*(royal|play|fog|hive|hunters|quantum|underground|stop|medusa|abyss|maze|snatch|cuba|avos|petya|arcus|frag|fun|interlock|lynx|kairos|embargo|termite|nitrogen|lorenz)[-_ .](decrypt|restore|recover)([-_ ]?(your|my|all|ur)?[-_ ]?(files|data))?(?![a-z])|[!#@+]{0,3}[-_ ]*read[-_ ]?me[-_ .](akira|lockbit|lockbit3|conti|black[-_ ]?basta|blacksuit|qilin|medusalocker|rhysida|8base|bianlian|clop|cl0p|alphv|blackcat|nokoyawa|trigona|mallox|phobos|dharma|makop|ransomhub|cicada3301|dragonforce|sarcoma|safepay|brain[-_ ]?cipher|ryuk|nefilim|nemty|egregor|darkside|revil|sodinokibi|netwalker|babuk|avaddon|blackbyte|vice[-_ ]?society|zeppelin|ragnar|karakurt|hellcat|avoslocker|yanluowang|pysa|mespinoza|doppelpaymer|bitpaymer|wannacry|gandcrab|cerber|locky|djvu|cactus|lockfile|hunters[-_ ]?international|inc|helldown|monti|ranzy|notpetya|dridex|anubis|devman|cicada|3am)(?![a-z])|[!#@+]{1,3}[-_ ]*read[-_ ]?me[-_ .](royal|play|fog|hive|hunters|quantum|underground|stop|medusa|abyss|maze|snatch|cuba|avos|petya|arcus|frag|fun|interlock|lynx|kairos|embargo|termite|nitrogen|lorenz)(?![a-z]))[-_ .a-z0-9!#@+]*\\.(txt|hta|html|htm|rtf)$",
+      "noise_filter": false
+    },
+    {
+      "name": "ransom_note_id_readme",
+      "title": "README with a random victim identifier",
+      "description": "readme prefixed or suffixed with a 5 to 12 character mixed alphanumeric identifier, as REvil, DarkSide, NetWalker and RansomHub name their notes, and the LockBit 3 form of nine mixed case characters before .README.txt. The identifier needs two digits and a letter after a digit, and version or platform shapes such as win10x64 and vs2019 are rejected.",
+      "severity": "high",
+      "category": "impact",
+      "mitre": [
+        "T1486"
+      ],
+      "name_regex": "(?i)^((?=[a-z0-9]{0,10}\\d[a-z0-9]{0,10}\\d)(?=[a-z0-9]*\\d[a-z0-9]*[a-z])(?![a-z]{1,6}\\d{1,4}(x\\d{2})?(64|86|32)?(?![a-z0-9]))[a-z0-9]{5,12}(?=[-_.])[-_.]read[-_ ]?me|read[-_ ]?me[-_.](?=[a-z0-9]{0,10}\\d[a-z0-9]{0,10}\\d)(?=[a-z0-9]*\\d[a-z0-9]*[a-z])(?![a-z]{1,6}\\d{1,4}(x\\d{2})?(64|86|32)?(?![a-z0-9]))[a-z0-9]{5,12}|(?-i:[A-Za-z0-9](?=(?:[A-Za-z0-9]*?[A-Z]){2})(?=[A-Z0-9]*[a-z])[A-Za-z0-9]{8}\\.README))\\.(txt|html|htm|hta)$",
+      "noise_filter": false
+    },
+    {
+      "name": "ransom_note_decorated_readme",
+      "title": "README decorated with exclamation marks",
+      "description": "!!!READ_ME!!!.txt, !_READ_ME.RTF, @Please_Read_Me@.txt, +README-WARNING+.txt and similar. Documentation is not named this way.",
+      "severity": "high",
+      "category": "impact",
+      "mitre": [
+        "T1486"
+      ],
+      "name_regex": "(?i)^[!#@+]{1,3}[-_ ]*[a-z0-9_ -]{0,24}read[-_ ]?me[-_ .a-z0-9!#@+]*\\.(txt|hta|html|htm|rtf)$",
+      "noise_filter": false
+    },
+    {
+      "name": "ransom_note_shouted_readme",
+      "title": "Upper case prefixed README",
+      "description": "A capitalised word followed by README, as in CONTI_README.txt or XYZ-README.TXT. Case sensitive, and common software prefixes such as INSTALL, LICENSE, DRIVER and vendor names are excluded. Known families are covered by the family rule at critical.",
+      "severity": "medium",
+      "category": "impact",
+      "mitre": [
+        "T1486"
+      ],
+      "name_regex": "^(?!(INSTALL|LICENSE|DRIVER|SETUP|UPDATE|BUILD|SOURCE|SDK|API|SRC|DOC|DOCS|RELEASE|PATCH|PLUGIN|MOD|GAME|WIN|WIN32|WIN64|X64|X86|LINUX|MAC|EN|US|DE|FR|ES|PT|BR|IMPORTANT|FIRST|CHANGES|NOTES|ABOUT|INFO|HELP|MANUAL|GUIDE|QUICK|START|QUICKSTART|DEV|TEST|TOOLS|UTILS|BIN|LIB|DATA|CONFIG|EXAMPLE|EXAMPLES|SAMPLE|SAMPLES|TEMPLATE|PYTHON|JAVA|NODE|NPM|GIT|GITHUB|FONT|FONTS|THEME|SKIN|MAP|MAPS|TEXTURE|LEVEL|MISSION|SERVER|CLIENT|ADMIN|USER|OLD|NEW|ORIGINAL|PORTABLE|FULL|LITE|PRO|FREE|DEMO|BETA|ALPHA|RC|VERSION|VER|V1|V2|V3|WINRAR|7ZIP|OPENSSL|CUDA|NVIDIA|INTEL|AMD|REALTEK|DELL|HP|LENOVO|MSI|ASUS|LOGITECH|CANON|EPSON|BROTHER|SAMSUNG|LG|SONY)[-_ .])[A-Z0-9]{2,24}[-_ .]READ[-_ ]?ME[-_ .A-Z0-9!#@]*\\.(TXT|txt|HTA|hta|HTML|html|HTM|htm|RTF|rtf)$",
+      "noise_filter": false
+    },
+    {
+      "name": "ransom_note_hta_readme",
+      "title": "README as an HTML application",
+      "description": "A readme delivered as .hta. Software ships readme.txt or readme.html, never an HTML application.",
+      "severity": "medium",
+      "category": "impact",
+      "mitre": [
+        "T1486"
+      ],
+      "name_regex": "(?i)^[!#@+]{0,3}[-_ a-z0-9]{0,24}read[-_ ]?me[-_ .a-z0-9!#@+]*\\.hta$",
+      "noise_filter": false
+    },
+    {
+      "name": "ransomware_family_extension",
+      "title": "Known ransomware family extension",
+      "description": "File extensions used by named ransomware families. Family agnostic detection of new extensions is handled by the mass extension change heuristic, not by this list.",
+      "severity": "critical",
+      "category": "impact",
+      "mitre": [
+        "T1486"
+      ],
+      "extensions": [
+        ".lockbit",
+        ".lockbit3",
+        ".blackcat",
+        ".alphv",
+        ".akira",
+        ".conti",
+        ".ryuk",
+        ".revil",
+        ".sodinokibi",
+        ".clop",
+        ".nefilim",
+        ".darkside",
+        ".babuk",
+        ".medusa",
+        ".medusalocker",
+        ".phobos",
+        ".8base",
+        ".mallox",
+        ".blackbasta",
+        ".basta",
+        ".royal",
+        ".dharma",
+        ".cerber",
+        ".zeppelin",
+        ".rhysida",
+        ".play",
+        ".cactus",
+        ".qilin",
+        ".blacksuit",
+        ".abyss",
+        ".trigona",
+        ".nokoyawa",
+        ".bianlian",
+        ".blackbyte",
+        ".cuba",
+        ".yanluowang",
+        ".avos",
+        ".quantum",
+        ".deadbolt",
+        ".lynx",
+        ".fog",
+        ".interlock",
+        ".embargo",
+        ".dragonforce",
+        ".makop",
+        ".eking",
+        ".elbie",
+        ".faust",
+        ".abcd",
+        ".malox",
+        ".nightsky",
+        ".ragnar",
+        ".ryk",
+        ".babyk",
+        ".royal_w",
+        ".royal_u",
+        ".avos2",
+        ".flocked",
+        ".cts1",
+        ".mkp",
+        ".xollam",
+        ".powerranges",
+        ".safepay",
+        ".dragonforce_encrypted",
+        ".1nt3rlock",
+        ".akiranew",
+        ".threeamtime",
+        ".termite",
+        ".x2anylock",
+        ".anubis",
+        ".crypto24",
+        ".devman",
+        ".c_l_o_p",
+        ".ciop",
+        ".cl0p",
+        ".mallab",
+        ".ma1x0",
+        ".blackbytent"
+      ],
+      "noise_filter": false
+    },
+    {
+      "name": "ransomware_encrypted_name_shape",
+      "title": "Encrypted file name in the Phobos, Dharma or Makop shape",
+      "description": "The victim id and contact address are embedded in the name: file.docx.id[1A2B3C4D-3456].[mail@onion.org].faust for Phobos and its variants, file.docx.id-1A2B3C4D.[mail].dharma for Dharma and CrySis, file.docx.[1A2B3C4D].[mail].makop for Makop. The shape covers every final extension these families rotate through.",
+      "severity": "critical",
+      "category": "impact",
+      "mitre": [
+        "T1486"
+      ],
+      "name_regex": "(?i)(\\.id\\[[0-9a-f]{8}-\\d{4}\\]\\.\\[[^\\]]+\\]\\.[a-z0-9]{2,12}|\\.id-[0-9a-f]{8}\\.\\[[^\\]]+\\]\\.[a-z0-9]{2,12}|\\.\\[[0-9a-f]{8}\\]\\.\\[[^\\]]+\\]\\.[a-z0-9]{2,12})$",
+      "noise_filter": false
+    },
+    {
+      "name": "ransomware_extension_pattern",
+      "title": "Ransomware extension with a per-victim suffix",
+      "description": "Extensions with a victim id or counter that never match a fixed list: Ragnar Locker .ragnar_<id>, Royal .royal_<letter>, Cactus .cts<n>, Zeppelin .<3 hex>-<3 hex>-<3 hex>, Trigona ._locked, MedusaLocker .ReadInstructions.",
+      "severity": "critical",
+      "category": "impact",
+      "mitre": [
+        "T1486"
+      ],
+      "name_regex": "(?i)\\.(ragnar_[0-9a-z]{4,16}|royal_[a-z]|cts\\d|[0-9a-f]{3}-[0-9a-f]{3}-[0-9a-f]{3}|_locked|read(the)?instructions)$",
+      "noise_filter": false
+    },
+    {
+      "name": "generic_encrypted_extension",
+      "title": "Generic encrypted file extension",
+      "description": ".locked, .encrypted, .crypt, .hive and similar. Some legitimate software uses these, and .hive is also how analysts name registry hive exports, so the rule is limited to user and share data and rated low. Supporting evidence, not proof.",
+      "severity": "low",
+      "category": "impact",
+      "mitre": [
+        "T1486"
+      ],
+      "extensions": [
+        ".locked",
+        ".encrypted",
+        ".crypt",
+        ".crypted",
+        ".crypto",
+        ".wallet",
+        ".hive"
+      ],
+      "path_prefix": [
+        "\\users\\",
+        "\\shares\\",
+        "\\data\\",
+        "\\backup\\"
+      ]
+    },
+    {
+      "name": "double_extension_executable",
+      "title": "Double extension executable",
+      "description": "A document, image, media or archive style name ending in an executable extension, for example invoice.pdf.exe or photo.jpg.scr. Markup names such as page.html.js are build output and are only reported with a binary or batch extension.",
+      "severity": "high",
+      "category": "defense_evasion",
+      "mitre": [
+        "T1036.007"
+      ],
+      "name_regex": "(?i)^.+\\.((pdf|doc|docx|docm|xls|xlsx|xlsm|ppt|pptx|pptm|txt|rtf|csv|odt|ods|jpg|jpeg|png|gif|bmp|tif|tiff|mp3|mp4|wav|avi|mov|msg|eml|zip|rar|7z|iso|img)\\.(exe|scr|com|pif|bat|cmd|vbs|vbe|js|jse|wsf|hta|ps1|msi|cpl)|(xml|html|htm|svg)\\.(exe|scr|com|pif|bat|cmd|vbs|vbe|hta|msi|cpl))$",
+      "noise_filter": false
+    },
+    {
+      "name": "document_named_shortcut",
+      "title": "Shortcut named after a document",
+      "description": "invoice.pdf.lnk and similar, the shape of a phishing shortcut. Windows writes the same names into Recent and the Office MRU folders, so those are excluded and the rule needs a reconstructed path.",
+      "severity": "medium",
+      "category": "defense_evasion",
+      "mitre": [
+        "T1036.007",
+        "T1204.002"
+      ],
+      "name_regex": "(?i)^.+\\.(pdf|doc|docx|docm|xls|xlsx|xlsm|ppt|pptx|pptm|txt|rtf|csv|odt|ods|jpg|jpeg|png|gif|bmp|tif|tiff|mp3|mp4|wav|avi|mov|msg|eml|zip|rar|7z|iso|img|xml|html|htm|svg)\\.lnk$",
+      "path_not_contains": [
+        "\\windows\\recent\\",
+        "\\recent items\\",
+        "\\start menu\\",
+        "\\quick launch\\",
+        "\\microsoft\\office\\recent\\",
+        "\\automaticdestinations\\",
+        "\\customdestinations\\"
+      ],
+      "requires_path": true,
+      "noise_filter": false
+    },
+    {
+      "name": "rtlo_filename",
+      "title": "Right to left override in file name",
+      "description": "U+202E right to left override, or the RLE, RLI and FSI controls, reverse the visible order so gpj.exe displays as exe.jpg.",
+      "severity": "critical",
+      "category": "defense_evasion",
+      "mitre": [
+        "T1036.002"
+      ],
+      "name_regex": "[‫‮⁧⁨]",
+      "noise_filter": false
+    },
+    {
+      "name": "trailing_space_or_dot_name",
+      "title": "File name ending in a space or dot",
+      "description": "Only possible through the \\\\?\\ path syntax or from a non Windows client. Such files are hard to open or delete with normal tools.",
+      "severity": "medium",
+      "category": "defense_evasion",
+      "mitre": [
+        "T1036"
+      ],
+      "name_regex": "[ .]$",
+      "noise_filter": false
+    },
+    {
+      "name": "system_binary_wrong_location",
+      "title": "System binary name outside its directory",
+      "description": "svchost, lsass, csrss, cmd, powershell, rundll32, certutil, wmic and other system binaries anywhere except directly in System32 or SysWOW64, the servicing stores, Windows.old and container base images. A copy in a System32 subdirectory such as wbem or Tasks is reported, and so is a copy of certutil or wmic in a user directory, the usual way past application allowlisting.",
+      "severity": "high",
+      "category": "defense_evasion",
+      "mitre": [
+        "T1036.005"
+      ],
+      "name_regex": "(?i)^(svchost|lsass|csrss|winlogon|services|smss|spoolsv|taskhostw|taskhost|dllhost|conhost|wininit|lsm|rundll32|regsvr32|cmd|powershell|wmiprvse|msiexec|ctfmon|sihost|fontdrvhost|dwm|logonui|userinit|runtimebroker|searchindexer|mshta|wscript|cscript|werfault|audiodg|certutil|bitsadmin|wmic|schtasks|esentutl|ntdsutil|nltest|dsquery)\\.exe$",
+      "path_not_prefix": [
+        "\\windows\\winsxs\\",
+        "\\windows\\servicing\\",
+        "\\windows\\softwaredistribution\\",
+        "\\windows\\installer\\",
+        "\\windows\\systemapps\\",
+        "\\windows.old\\",
+        "\\$windows.~bt\\",
+        "\\$windows.~ws\\"
+      ],
+      "requires_path": true,
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\containers\\baseimages\\"
+      ],
+      "path_not_regex": "(?i)^\\\\windows\\\\(system32|syswow64|sysarm32|sychpe32)\\\\([^\\\\]+|windowspowershell\\\\v1\\.0\\\\powershell\\.exe|wbem\\\\(wmiprvse|wmic)\\.exe)$"
+    },
+    {
+      "name": "explorer_wrong_location",
+      "title": "explorer.exe outside \\Windows",
+      "description": "explorer.exe anywhere except \\Windows, \\Windows\\SysWOW64 and its ARM64 equivalents, and the servicing stores.",
+      "severity": "high",
+      "category": "defense_evasion",
+      "mitre": [
+        "T1036.005"
+      ],
+      "name_equals": [
+        "explorer.exe"
+      ],
+      "path_not_regex": "(?i)^\\\\windows\\\\((syswow64|sysarm32|sychpe32)\\\\)?explorer\\.exe$",
+      "path_not_prefix": [
+        "\\windows\\winsxs\\",
+        "\\windows\\servicing\\",
+        "\\windows\\systemapps\\",
+        "\\windows.old\\",
+        "\\$windows.~bt\\",
+        "\\$windows.~ws\\"
+      ],
+      "requires_path": true,
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\containers\\baseimages\\"
+      ]
+    },
+    {
+      "name": "downloaded_executable",
+      "title": "Executable downloaded from the internet",
+      "description": "Zone identifier 3 or 4 on an executable in Downloads or on the Desktop, or on one whose path could not be reconstructed. Users download installers all the time, so the severity is medium. The value is the URL in the download_url column. An executable with the mark anywhere else is reported by the unusual location rule instead.",
+      "severity": "medium",
+      "category": "initial_access",
+      "mitre": [
+        "T1566.002",
+        "T1204.002"
+      ],
+      "extensions": [
+        ".exe",
+        ".dll",
+        ".scr",
+        ".com",
+        ".pif",
+        ".bat",
+        ".cmd",
+        ".ps1",
+        ".vbs",
+        ".js",
+        ".jse",
+        ".hta",
+        ".msi",
+        ".lnk"
+      ],
+      "zone_ids": [
+        "3",
+        "4"
+      ],
+      "path_contains": [
+        "\\downloads\\",
+        "\\desktop\\"
+      ],
+      "noise_filter": false
+    },
+    {
+      "name": "downloaded_executable_unusual_location",
+      "title": "Executable downloaded to an unusual location",
+      "description": "Mark-of-the-Web on an executable that is not in Downloads or the Desktop. Either something fetched it straight to where it runs, or it was extracted from a downloaded archive with Explorer, which propagates the mark. The Windows Installer cache, the Package Cache and the winget, Chocolatey and Scoop download directories are excluded.",
+      "severity": "high",
+      "category": "initial_access",
+      "mitre": [
+        "T1105",
+        "T1204.002"
+      ],
+      "extensions": [
+        ".exe",
+        ".dll",
+        ".scr",
+        ".com",
+        ".pif",
+        ".bat",
+        ".cmd",
+        ".ps1",
+        ".vbs",
+        ".js",
+        ".jse",
+        ".hta",
+        ".msi",
+        ".lnk"
+      ],
+      "zone_ids": [
+        "3",
+        "4"
+      ],
+      "path_not_contains": [
+        "\\downloads\\",
+        "\\desktop\\",
+        "\\windows\\installer\\",
+        "\\package cache\\",
+        "\\temp\\winget\\",
+        "\\chocolatey\\",
+        "\\scoop\\"
+      ],
+      "noise_filter": false,
+      "requires_path": true
+    },
+    {
+      "name": "downloaded_container",
+      "title": "Downloaded archive or disk image outside Downloads",
+      "description": "Archives and ISO, IMG or VHD images with Mark-of-the-Web that are not in the Downloads folder. Disk images are used to bypass Mark-of-the-Web propagation. Rated low, the URL is what matters.",
+      "severity": "low",
+      "category": "initial_access",
+      "mitre": [
+        "T1566.002",
+        "T1553.005"
+      ],
+      "extensions": [
+        ".zip",
+        ".rar",
+        ".7z",
+        ".iso",
+        ".img",
+        ".vhd",
+        ".vhdx",
+        ".cab",
+        ".ace"
+      ],
+      "zone_ids": [
+        "3",
+        "4"
+      ],
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\downloads\\"
+      ],
+      "requires_path": true
+    },
+    {
+      "name": "downloaded_to_system_location",
+      "title": "Downloaded file in a system location",
+      "description": "Mark-of-the-Web on a file under \\Windows, PerfLogs or Users\\Public, excluding \\Windows\\Temp, Public\\Downloads and the INetCache of the service profiles. Something fetched it straight into a system path. The Windows Installer cache is excluded because CopyFile preserves the stream on cached installers. Executables in the excluded directories are still reported by the unusual location rule.",
+      "severity": "critical",
+      "category": "initial_access",
+      "mitre": [
+        "T1105"
+      ],
+      "zone_ids": [
+        "3",
+        "4"
+      ],
+      "path_prefix": [
+        "\\windows\\",
+        "\\perflogs\\",
+        "\\users\\public\\"
+      ],
+      "noise_filter": false,
+      "path_not_contains": [
+        "\\windows\\temp\\",
+        "\\windows\\installer\\",
+        "\\users\\public\\downloads\\",
+        "\\inetcache\\"
+      ],
+      "requires_path": true
+    },
+    {
+      "name": "downloaded_to_programdata_or_windows_temp",
+      "title": "Downloaded file in ProgramData or \\Windows\\Temp",
+      "description": "Mark-of-the-Web under ProgramData or \\Windows\\Temp. Installers copy themselves here with CopyFile, which keeps the stream, so this is high rather than critical. The Package Cache is excluded.",
+      "severity": "high",
+      "category": "initial_access",
+      "mitre": [
+        "T1105"
+      ],
+      "zone_ids": [
+        "3",
+        "4"
+      ],
+      "path_prefix": [
+        "\\programdata\\",
+        "\\windows\\temp\\"
+      ],
+      "path_not_contains": [
+        "\\package cache\\"
+      ],
+      "noise_filter": false,
+      "requires_path": true
+    }
+  ]
+}
