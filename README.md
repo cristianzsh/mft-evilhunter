@@ -2,6 +2,8 @@
 
 `MFT-EvilHunter` is a tool for hunting indicators of compromise in NTFS metadata. It parses `$MFT`, `$LogFile` and `$UsnJrnl:$J`, runs a rule pack and a set of heuristics over every record, and presents the results in searchable tables that can be exported to CSV format.
 
+Demonstration video: https://www.youtube.com/watch?v=3wSIn8to3tk
+
 <img src="screenshots/01_iocs.png"/>
 
 ## Features
